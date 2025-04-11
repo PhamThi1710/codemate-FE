@@ -45,7 +45,6 @@ declare module 'vue-router/auto-routes' {
     '/Profile/': RouteRecordInfo<'/Profile/', '/Profile', Record<never, never>, Record<never, never>>,
     '/ProgressTracking/': RouteRecordInfo<'/ProgressTracking/', '/ProgressTracking', Record<never, never>, Record<never, never>>,
     '/ProgressTracking/Professor': RouteRecordInfo<'/ProgressTracking/Professor', '/ProgressTracking/Professor', Record<never, never>, Record<never, never>>,
-    '/ProgressTracking/StudentTracking': RouteRecordInfo<'/ProgressTracking/StudentTracking', '/ProgressTracking/StudentTracking', Record<never, never>, Record<never, never>>,
     '/Schedule/': RouteRecordInfo<'/Schedule/', '/Schedule', Record<never, never>, Record<never, never>>,
     '/Schedule/Professor': RouteRecordInfo<'/Schedule/Professor', '/Schedule/Professor', Record<never, never>, Record<never, never>>,
     '/SystemUsageManagement/': RouteRecordInfo<'/SystemUsageManagement/', '/SystemUsageManagement', Record<never, never>, Record<never, never>>,

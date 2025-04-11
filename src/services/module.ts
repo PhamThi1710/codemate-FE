@@ -50,7 +50,7 @@ export const moduleService = {
       { showError, showSuccess }
     );
   },
-  
+
   async fetchDocumentDetails(
     { showError, showSuccess }: AuthConfig,
     moduleId: string
@@ -60,5 +60,5 @@ export const moduleService = {
       "",
       { showError, showSuccess }
     );
-  }
+  },
 };

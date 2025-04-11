@@ -300,12 +300,12 @@ const ProfessorRoutes = [
       component: () => import("@/pages/ProgressTracking/Professor.vue"),
       meta: { requiresAuth: true, role: "professor" },
     },
-    {
-      path: "/professor-progress/:courseId/students/:studentId",
-      name: "ProfessorProgressStudent",
-      component: () => import("@/pages/ProgressTracking/StudentTracking.vue"),
-      meta: { requiresAuth: true, role: "professor" },
-    }
+//    {
+//      path: "/professor-progress/:courseId/students/:studentId",
+//      name: "ProfessorProgressStudent",
+//      component: () => import("@/pages/ProgressTracking/StudentTracking.vue"),
+//      meta: { requiresAuth: true, role: "professor" },
+//    }
   ],
   },
   {

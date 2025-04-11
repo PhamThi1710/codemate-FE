@@ -219,6 +219,39 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <v-divider class="my-5" />
+
+    <!-- Code Exercises Section -->
+    <div class="mb-4 d-flex align-center">
+      <v-icon color="primary" size="large" class="mr-2">mdi-code-tags</v-icon>
+      <h2 class="text-h5 font-weight-bold mb-0">Code Exercises</h2>
+      <v-spacer />
+      <v-btn
+        @click="handleGenerateCodeExercise"
+        color="primary"
+        :loading="isExerciseLoading"
+        :disabled="isExerciseLoading"
+      >
+        {{ isExerciseLoading ? "Generating..." : "Generate New Exercise" }}
+      </v-btn>
+    </div>
+
+      <v-expansion-panels variant="accordion" class="elevation-1 rounded-lg">
+        <v-expansion-panel
+          v-for="exercise in codeExercises"
+          :key="exercise.id"
+        >
+          <v-expansion-panel-title>
+            {{ exercise.name }}
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <v-btn color="primary" @click="goToExercise(exercise.id)">Practice</v-btn>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
+
+
   </v-container>
 </template>
 
@@ -230,6 +263,7 @@ import { Breadcrumbs } from "@/types/Breadcrumbs";
 import ReadingMaterial from "@/components/ReadingMaterial/ReadingMaterial.vue";
 import { useTimeSpentStore } from "@/stores/timeSpentStore";
 import { dashboardService } from "@/services/dashboardService";
+import { useGeneratedCodeExerciseStore } from "@/stores/generatedCodeExerciseStore";
 interface RouteParams {
   moduleId: string;
   lessonId: string;
@@ -358,6 +392,22 @@ onBeforeUnmount(async () => {
   await timeSpentStore.updateTimeSpent({ showError, showSuccess }, lessonId);
   console.log("Time spent:", timeSpentStore.timeSpentInSeconds, "seconds");
   console.log("Formatted time:", timeSpentStore.formattedTimeSpent);
+});
+
+const codeExerciseStore = useGeneratedCodeExerciseStore();
+const codeExercises = computed(() => codeExerciseStore.exercises);
+const isExerciseLoading = computed(() => codeExerciseStore.loading);
+
+const handleGenerateCodeExercise = async () => {
+  await codeExerciseStore.generateExercise(moduleId);
+};
+
+const goToExercise = (exerciseId: string) => {
+  router.push(`/exercise-code/${exerciseId}`);
+};
+
+onMounted(async () => {
+  await codeExerciseStore.loadExercises(moduleId);
 });
 </script>
 
