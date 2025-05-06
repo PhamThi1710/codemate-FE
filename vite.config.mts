@@ -13,6 +13,15 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        format: 'es',
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+    },
+  },
   plugins: [
     VueRouter({
       dts: 'src/typed-router.d.ts',
@@ -68,6 +77,9 @@ export default defineConfig({
     format: 'es'
   },
   server: {
+    headers: {
+      'Content-Type': 'application/javascript',
+    },
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,

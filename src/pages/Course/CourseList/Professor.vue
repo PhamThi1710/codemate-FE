@@ -2,10 +2,11 @@
   <v-app>
      <v-main class="pt-0 pb-2 pl-4 pr-4 bg-gray-50">
        <!-- <RecentCourses v-if="courses" :courses="courses?.content" /> -->
+       <h1 class="text-3xl font-bold gradient-text mt-8">Courses List</h1>
        <section>
          <v-text-field
            v-model="searchQuery"
-           placeholder="You can search by course name and your professor's name here ... 🌸🎆"
+           placeholder="You can search by course name ... 🌸🎆"
            class="mt-4 w-full rounded-lg shadow-sm bg-on-primary"
            :loading="isLoading"
            solo
@@ -43,6 +44,7 @@
  </template>
  
  <script lang="ts" setup>
+ import { ref, watch, inject, onMounted } from 'vue';
  import { coursesService } from "@/services/Professor/CourseServices";
  import { GetProfessorCoursesPaginatedResponse } from "@/types/Course";
  import useDebounce from "@/composables/useDebounce";
@@ -51,7 +53,7 @@
  const currentPage = ref<number>(1);
  const totalPages = ref<number>(1);
  const isLoading = ref<boolean>(false);
- const courses = ref<GetProfessorCoursesPaginatedResponse>();
+ const courses = ref<GetProfessorCoursesPaginatedResponse | null>(null);
  
  const debouncedSearch = useDebounce.useDebounceFn(() => {
    fetchCourses();
@@ -73,25 +75,44 @@
  
  const fetchCourses = async () => {
    isLoading.value = true;
- 
-   const response = await coursesService.fetchCoursesList({
-     showError,
-     showSuccess,
-     search_query: searchQuery.value,
-   });
- 
-   if (response && "data" in response && response.data) {
-     courses.value = response.data as GetProfessorCoursesPaginatedResponse;
-     if (
-       response.data &&
-       typeof response.data === "object" &&
-       "totalPages" in response.data
-     ) {
-       totalPages.value = response.data.totalPages as number;
+   
+   try {
+     // Create query parameters object with pagination and search
+     const queryParams: Record<string, any> = {
+       page: currentPage.value - 1, // Adjust if your API uses 0-based indexing
+       size: 10 // Add your desired page size
+     };
+     
+     // Only add search_query if it's not empty
+     if (searchQuery.value.trim()) {
+       queryParams.search_query = searchQuery.value;
      }
+     
+     const response = await coursesService.fetchCoursesList({
+       showError,
+       showSuccess,
+       ...queryParams
+     });
+ 
+     if (response && "data" in response && response.data) {
+       courses.value = response.data as GetProfessorCoursesPaginatedResponse;
+       if (
+         response.data &&
+         typeof response.data === "object" &&
+         "totalPages" in response.data
+       ) {
+         totalPages.value = response.data.totalPages as number;
+       }
+     }
+   } catch (error) {
+     console.error("Error fetching courses:", error);
+     showError("Failed to fetch courses. Please try again.");
+     courses.value = null;
+   } finally {
+     isLoading.value = false;
    }
-   isLoading.value = false;
  };
+ 
  watch(currentPage, () => {
    fetchCourses();
  });
@@ -100,4 +121,3 @@
    fetchCourses();
  });
  </script>
- 

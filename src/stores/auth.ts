@@ -69,6 +69,7 @@ export const useAuthStore = create<AuthStore>()(
           ApiService.clearAuthData();
           localStorage.removeItem('user');
           sessionStorage.clear();
+          window.location.href = '/login';
         } catch (error) {
           console.error('Error during logout:', error);
         }
