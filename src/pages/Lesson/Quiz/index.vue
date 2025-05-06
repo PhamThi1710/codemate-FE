@@ -1,14 +1,17 @@
 <template>
   <v-container fluid class="px-12" v-if="moduleQuizzes">
     <!-- Breadcrumbs -->
+    <v-skeleton-loader v-if="isLoading" type="text" class="mb-4" />
     <v-breadcrumbs
+      v-else
       class="ma-0 pa-0 mb-4"
       :items="breadcrumbs"
       divider="/"
     ></v-breadcrumbs>
 
     <!-- Main Header Card -->
-    <v-card class="border-card mb-6 overflow-hidden" elevation="3">
+    <v-skeleton-loader v-if="isLoading" type="card-heading" class="mb-6" />
+    <v-card v-else class="border-card mb-6 overflow-hidden" elevation="3">
       <div class="card-header pa-6 d-flex align-center">
         <v-icon color="primary" size="x-large" class="mr-4"
           >mdi-book-education-outline</v-icon
@@ -103,7 +106,11 @@
         </v-row>
       </v-card-text>
     </v-card>
-    <ReadingMaterial :module-id="moduleId" />
+    
+    <!-- Reading Material with skeleton loader -->
+    <v-skeleton-loader v-if="isLoading" type="article" class="mb-6" />
+    <ReadingMaterial v-else :module-id="moduleId" />
+    
     <!-- Quizzes Section -->
     <div class="mb-4 d-flex align-center">
       <v-icon color="primary" size="large" class="mr-2"
@@ -127,9 +134,16 @@
       />
     </div>
 
+    <!-- Loading state for quizzes -->
+    <v-row v-if="isLoading">
+      <v-col cols="12" sm="6" md="4" v-for="i in 3" :key="i">
+        <v-skeleton-loader type="card" class="w-full" />
+      </v-col>
+    </v-row>
+
     <!-- Empty state when no quizzes are available -->
     <v-card
-      v-if="moduleQuizzes.quizzes.length === 0"
+      v-else-if="moduleQuizzes.quizzes.length === 0"
       class="border-card mb-6 empty-state-card"
     >
       <v-card-text class="pa-6 text-center">
@@ -250,9 +264,7 @@
                   :class="getScoreTextClass(quiz.score, 100)"
                   class="font-weight-medium"
                 >
-                  Score: {{ formatScore(quiz.score) }}/{{
-                    formatScore(100)
-                  }}
+                  Score: {{ formatScore(quiz.score) }}/{{                     formatScore(100)                  }}
                 </span>
               </div>
 
@@ -320,9 +332,13 @@
         </v-btn>
       </div>
     </div>
+    
+    <!-- Loading state for code exercises -->
+    <v-skeleton-loader v-if="isExerciseLoading" type="card" class="w-full mb-6" />
+    
     <!-- Empty state for code exercises -->
     <v-card
-      v-if="codeExercises.length === 0"
+      v-else-if="codeExercises.length === 0"
       class="border-card mb-6 empty-state-card"
     >
       <v-card-text class="pa-6 text-center">
@@ -397,7 +413,7 @@ const moduleQuizzes = ref<ModuleQuizResponse>({
 const availableCourse = ref<GetAvailableCourses[] | null>(null);
 const router = useRouter();
 const route = useRoute();
-const isLoading = ref(false);
+const isLoading = ref(true); // Set loading to true initially
 const { moduleId, lessonId } = route.params as RouteParams;
 const breadcrumbsStore = useBreadcrumbsStore();
 const routeState = computed(() => {
@@ -564,18 +580,28 @@ const showError = inject("showError") as (message: string) => void;
 const showSuccess = inject("showSuccess") as (message: string) => void;
 
 const fetchModuleQuizzes = async () => {
-  const response = await moduleService.fetchModuleQuizzes(
-    { showError, showSuccess },
-    moduleId
-  );
-  if (response && "data" in response && response.data) {
-    moduleQuizzes.value = response.data as ModuleQuizResponse;
+  isLoading.value = true; // Set loading to true before fetching
+  try {
+    const response = await moduleService.fetchModuleQuizzes(
+      { showError, showSuccess },
+      moduleId
+    );
+    if (response && "data" in response && response.data) {
+      moduleQuizzes.value = response.data as ModuleQuizResponse;
+    }
+  } catch (error) {
+    console.error("Error fetching module quizzes:", error);
+    showError("Failed to load quizzes");
+  } finally {
+    isLoading.value = false; // Set loading to false when done
   }
 };
 
-onMounted(() => {
-  fetchModuleQuizzes();
-  fetchAvailableCourses();
+onMounted(async () => {
+  await Promise.all([
+    fetchModuleQuizzes(),
+    fetchAvailableCourses()
+  ]);
 });
 
 const timeSpentStore = useTimeSpentStore();
@@ -673,7 +699,6 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
-/* Styling for empty state card */
 .empty-state-card {
   background-color: #fafafa;
   border: 1px dashed rgba(var(--v-theme-primary), 0.3);
@@ -749,16 +774,18 @@ onMounted(async () => {
   background-color: #3949ab !important;
 }
 
-/* Add some spacing between elements */
 .gap-2 {
   gap: 8px;
 }
 
-/* Truncate long quiz names with ellipsis */
 .text-truncate {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+
+.w-full {
+  width: 100%;
 }
 </style>

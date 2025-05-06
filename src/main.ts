@@ -24,7 +24,6 @@ ApiService.init();
 startExpirationTimer();
 const app = createApp(App);
 app.use(VueApexCharts); // Use ApexCharts plugin
-
 app.component('apexchart', VueApexCharts)
 app.use(vue3GoogleLogin, {
   clientId: import.meta.env.VITE_APP_CLIENT_ID,

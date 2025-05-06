@@ -1,6 +1,11 @@
 <template>
   <div class="timeline-scroll-wrapper">
-    <div v-if="orderedLessons.length > 0" class="horizontal-learning-path mb-6">
+    <v-skeleton-loader
+      v-if="loading"
+      type="card, card, card"
+      class="horizontal-learning-path mb-6"
+    ></v-skeleton-loader>
+    <div v-else-if="orderedLessons.length > 0" class="horizontal-learning-path mb-6">
       <div class="flex flex-col mb-4">
         <div class="flex flex-row justify-between items-center mb-2">
           <h2 class="text-h5 font-weight-bold mb-4">
