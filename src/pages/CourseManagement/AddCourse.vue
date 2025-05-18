@@ -345,15 +345,9 @@ const processExcelFile = async () => {
           );
         } else {
           // Basic validation example (adjust as needed)
-          if (/^\d{8,10}$/.test(studentId)) {
             // Example: 8-10 digits
             newStudentIDs.push(studentId);
             fileDuplicateCheck.add(studentId);
-          } else {
-            errors.push(
-              `Row ${rowNum}: Invalid StudentID format "${studentId}"`
-            );
-          }
         }
       }
 

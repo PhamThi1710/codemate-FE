@@ -205,9 +205,9 @@ class ApiServiceClass {
         }
 
         // Optional success notification
-        if (showSuccess) {
-          showSuccess(responseData.message || "Operation successful");
-        }
+        // if (showSuccess) {
+        //   showSuccess(responseData.message || "Operation successful");
+        // }
 
         return responseData as T;
       }
@@ -217,9 +217,9 @@ class ApiServiceClass {
       const apiError = this.handleRequestError(error);
 
       // Optional error notification
-      if (showError) {
-        showError(apiError.message);
-      }
+      // if (showError) {
+      //   showError(apiError.message);
+      // }
       throw apiError;
     }
   }

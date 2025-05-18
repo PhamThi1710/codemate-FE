@@ -126,12 +126,12 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void;
   (e: "expand", value: boolean): void;
 }>();
-const { user, logout } = authStore.getState();
+const { user } = authStore.getState();
 const drawer = computed({
   get: () => props.modelValue,
   set: (value) => emit("update:modelValue", value),
 });
-
+const showSuccess = inject("showSuccess") as (message: string) => void;
 const expanded = ref(false);
 const role = computed(() => user?.role);
 
@@ -147,9 +147,11 @@ interface NavigationItem {
   to?: string;
   children?: NavigationItem[];
 }
-const handleLogout = () => {
-  logout();
-  emit("update:modelValue", false);
+const authState = ref(useAuthStore.getState());
+const handleLogout = async () => {
+  authState.value.logout();
+  router.push("/login");
+  showSuccess("Logged out successfully");
 };
 const studentItems: NavigationItem[] = [
   {

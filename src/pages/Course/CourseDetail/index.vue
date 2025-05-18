@@ -1,6 +1,6 @@
 <template>
   <v-container fluid class="py-6">
-    <HorizontalLearningPath v-if="course" :course="course" />
+    <HorizontalLearningPath v-if="course" :course="course" @refetch-learning-path="fetchCourseDetail" />
     <v-row>
       <v-col cols="12" md="8">
         <CourseMainContent
@@ -76,7 +76,7 @@ const fetchCourseDetail = async () => {
   }
 };
 
-// Update handleGoalSubmission to handle new path creation
+// Update handleGoalSubmission to handle new path creation and trigger refetch
 const handleGoalSubmission = async (goal: string) => {
   try {
     const response = await aiGenerateServices.generateLearningPath(
@@ -95,6 +95,8 @@ const handleGoalSubmission = async (goal: string) => {
       openCourseRecommendationsModal();
       hasLearningPath.value = true; // Update the status
       showSuccess("Learning path generated successfully");
+      // Trigger refetch of learning path
+      await fetchCourseDetail();
     }
   } catch (error) {
     showError("Failed to generate learning path");

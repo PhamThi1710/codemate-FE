@@ -2,17 +2,16 @@
   <div class="timeline-scroll-wrapper">
     <v-skeleton-loader
       v-if="loading"
-      type="card, card, card"
+      type="card, card, card, card"
       class="horizontal-learning-path mb-6"
     ></v-skeleton-loader>
     <div v-else-if="orderedLessons.length > 0" class="horizontal-learning-path mb-6">
+      <!-- Header Section -->
       <div class="flex flex-col mb-4">
         <div class="flex flex-row justify-between items-center mb-2">
           <h2 class="text-h5 font-weight-bold mb-4">
             Learning Path for
-            <span class="text-secondary-variant">{{
-              course?.course_name
-            }}</span>
+            <span class="text-secondary-variant">{{ course?.course_name }}</span>
           </h2>
           <div>
             <v-btn
@@ -30,18 +29,34 @@
           Goal: <span class="text-secondary">{{ student_goal }}</span>
         </span>
       </div>
+      
+      <!-- Timeline Container with Navigation -->
       <div class="timeline-container">
-        <div class="timeline-scroll-container">
+        <!-- Left Navigation Button -->
+        <v-btn
+          v-if="orderedLessons.length > 4"
+          icon
+          variant="text"
+          color="primary"
+          class="nav-button nav-left"
+          :disabled="currentStartIndex === 0"
+          @click="navigatePrev"
+        >
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
+        
+        <div class="timeline-scroll-container" ref="scrollContainer">
           <div class="timeline-line"></div>
 
           <div class="timeline-items">
             <div
-              v-for="(lesson, index) in orderedLessons"
+              v-for="(lesson, index) in visibleLessons"
               :key="lesson.lesson_id"
               class="timeline-item"
               :class="{
-                'first-item': index === 0,
-                'last-item': index === orderedLessons.length - 1,
+                'first-item': index === 0 && currentStartIndex === 0,
+                'last-item': index === visibleLessons.length - 1 && 
+                             currentStartIndex + visibleLessons.length === orderedLessons.length,
               }"
             >
               <div class="timeline-date-container">
@@ -50,7 +65,7 @@
                 </div>
                 <div class="timeline-dot" :class="getStatusClass(lesson)">
                   <v-icon size="16" color="white">
-                    mdi-numeric-{{ index + 1 }}-circle
+                    mdi-numeric-{{ currentStartIndex + index + 1 }}-circle
                   </v-icon>
                 </div>
                 <div class="timeline-date">
@@ -58,7 +73,7 @@
                 </div>
               </div>
 
-              <v-card class="timeline-card elevation-2">
+              <v-card class="timeline-card elevation-3">
                 <div class="position-relative">
                   <v-icon
                     color="amber"
@@ -70,19 +85,20 @@
                 </div>
 
                 <div class="d-flex flex-col align-center px-3 py-2">
-                  <!-- display the status above the title -->
+                  <!-- Status Chip -->
                   <div>
                     <v-chip
                       :color="getStatusColor(lesson)"
                       size="small"
-                      class="ml-2"
+                      class="ml-2 status-chip"
                     >
                       {{ renderStatusLabel(lesson.status) }}
                     </v-chip>
                   </div>
+                  <!-- Lesson Title -->
                   <div>
                     <h3
-                      class="text-align-center cursor-pointer"
+                      class="text-align-center cursor-pointer lesson-title"
                       @click="
                         navigateToRecommendLessonDetail(
                           lesson.id,
@@ -98,6 +114,30 @@
             </div>
           </div>
         </div>
+        
+        <!-- Right Navigation Button -->
+        <v-btn
+          v-if="orderedLessons.length > 4"
+          icon
+          variant="text"
+          color="primary"
+          class="nav-button nav-right"
+          :disabled="currentStartIndex + 4 >= orderedLessons.length"
+          @click="navigateNext"
+        >
+          <v-icon>mdi-chevron-right</v-icon>
+        </v-btn>
+      </div>
+      
+      <!-- Navigation Dots -->
+      <div v-if="orderedLessons.length > 4" class="navigation-dots">
+        <span 
+          v-for="(_, index) in pageCount" 
+          :key="index" 
+          class="dot" 
+          :class="{ 'active': currentPage === index }"
+          @click="goToPage(index)"
+        ></span>
       </div>
     </div>
   </div>
@@ -106,7 +146,8 @@
 <style scoped>
 .timeline-scroll-wrapper {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
+  position: relative;
 }
 
 .horizontal-learning-path {
@@ -117,12 +158,16 @@
 .timeline-container {
   position: relative;
   width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .timeline-scroll-container {
   position: relative;
   padding: 20px 0;
-  min-width: 100%;
+  width: 100%;
+  overflow: hidden;
+  transition: transform 0.3s ease;
 }
 
 .timeline-line {
@@ -130,15 +175,15 @@
   top: 40px;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 3px;
   background-color: #e0e0e0;
   z-index: 0;
 }
 
 .timeline-items {
   display: flex;
-  justify-content: center;
-  min-width: 100%;
+  justify-content: space-between;
+  width: 100%;
   position: relative;
   z-index: 1;
 }
@@ -147,9 +192,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 240px;
-  margin: 0 16px;
+  width: calc(25% - 24px);
+  margin: 0 12px;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .timeline-date-container {
@@ -161,14 +207,21 @@
 }
 
 .timeline-dot {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: #1976d2;
   margin: 8px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-dot:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .timeline-dot.dot-current {
@@ -187,27 +240,122 @@
   font-size: 12px;
   color: #757575;
   text-align: center;
+  font-weight: 500;
+  margin: 2px 0;
 }
 
 .timeline-card {
   width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.timeline-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .bookmark-star {
   position: absolute;
   top: 0;
   right: 0;
-  margin: 6px;
+  margin: 8px;
   z-index: 2;
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.bookmark-star:hover {
+  transform: scale(1.2);
 }
 
 .first-item,
 .last-item {
   margin-left: 0;
   margin-right: 0;
+}
+
+.nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-left {
+  left: -12px;
+}
+
+.nav-right {
+  right: -12px;
+}
+
+.status-chip {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.lesson-title {
+  font-size: 16px;
+  margin: 0;
+  padding: 0 8px;
+  text-align: center;
+  color: #333;
+  transition: color 0.2s ease;
+  line-height: 1.3;
+}
+
+.lesson-title:hover {
+  color: #1976d2;
+}
+
+.navigation-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  margin: 0 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dot.active {
+  background-color: #1976d2;
+  width: 10px;
+  height: 10px;
+}
+
+/* Animation for page transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.timeline-item {
+  animation: fadeIn 0.3s ease-out forwards;
 }
 </style>
 
@@ -234,8 +382,45 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const recommendedLessons = ref<GetRecommendedLessonsResponse[]>([]);
 const student_goal = ref<string | null>(null);
-const scrollPosition = ref(0);
-const maxScroll = ref(0);
+const currentStartIndex = ref(0);
+const itemsPerPage = 4;
+const scrollContainer = ref<HTMLElement | null>(null);
+
+// Calculated properties
+const orderedLessons = computed(() => {
+  return [...recommendedLessons.value].sort((a, b) => a.order - b.order);
+});
+
+const visibleLessons = computed(() => {
+  const start = currentStartIndex.value;
+  const end = Math.min(start + itemsPerPage, orderedLessons.value.length);
+  return orderedLessons.value.slice(start, end);
+});
+
+const pageCount = computed(() => {
+  return Math.ceil(orderedLessons.value.length / itemsPerPage);
+});
+
+const currentPage = computed(() => {
+  return Math.floor(currentStartIndex.value / itemsPerPage);
+});
+
+// Navigation methods
+const navigateNext = () => {
+  if (currentStartIndex.value + itemsPerPage < orderedLessons.value.length) {
+    currentStartIndex.value += 1;
+  }
+};
+
+const navigatePrev = () => {
+  if (currentStartIndex.value > 0) {
+    currentStartIndex.value -= 1;
+  }
+};
+
+const goToPage = (pageIndex: number) => {
+  currentStartIndex.value = pageIndex * itemsPerPage;
+};
 
 const checkViewButton = () => {
   if (
@@ -243,16 +428,11 @@ const checkViewButton = () => {
     props.course?.course_id &&
     !router.currentRoute.value.name.includes("ProgressTracking")
   ) {
-    console.log("checkViewButton", orderedLessons.value.length, props.course?.course_id, router.currentRoute.value.name);
     return true;
   } else {
     return false;
   }
 };
-
-const orderedLessons = computed(() => {
-  return [...recommendedLessons.value].sort((a, b) => a.order - b.order);
-});
 
 const fetchRecommendedLessons = async () => {
   try {
@@ -268,6 +448,8 @@ const fetchRecommendedLessons = async () => {
       if (response && "data" in response && response.data) {
         recommendedLessons.value = response.data.lessons;
         student_goal.value = response.data.student_goal;
+        // Reset to first page when data changes
+        currentStartIndex.value = 0;
       } else {
         error.value = "Failed to fetch recommended lessons";
       }
@@ -276,11 +458,6 @@ const fetchRecommendedLessons = async () => {
     error.value = "You haven't had any learning paths for this course yet.";
   } finally {
     loading.value = false;
-
-    // Initialize max scroll after DOM update
-    nextTick(() => {
-      updateMaxScroll();
-    });
   }
 };
 
@@ -352,37 +529,6 @@ const navigateToProgressTracking = (courseId: string) => {
   });
 };
 
-const updateMaxScroll = () => {
-  const container = document.querySelector(".timeline-scroll-container");
-  if (container) {
-    maxScroll.value = container.scrollWidth - container.clientWidth;
-  }
-};
-
-// Watch for container scroll events
-onMounted(() => {
-  const container = document.querySelector(".timeline-scroll-wrapper");
-  console.log("onMounted", container);
-  if (container) {
-    console.log("Container found", container);
-    container.addEventListener("scroll", () => {
-      scrollPosition.value = container.scrollLeft;
-    });
-
-    // Initialize
-    updateMaxScroll();
-    fetchRecommendedLessons();
-    console.log("fetchRecommendedLessons called");
-  }
-});
-
-onUnmounted(() => {
-  const container = document.querySelector(".timeline-scroll-wrapper");
-  if (container) {
-    container.removeEventListener("scroll", () => {});
-  }
-});
-
 const formatDate = (dateString: string) => {
   try {
     return dateFnsFormat(parseISO(dateString), "MMM dd");
@@ -411,23 +557,12 @@ const getStatusClass = (lesson: GetRecommendedLessonsResponse): string => {
   return "dot-current";
 };
 
-// const getStatusText = (lesson: GetRecommendedLessonsResponse): string => {
-//   const today = new Date("2025-06-20");
-//   const start = new Date(lesson.start_date);
-//   const end = new Date(lesson.end_date);
-
-//   if (today < start) return "Upcoming";
-//   if (today > end) return "Completed";
-//   return "In Progress";
-// };
-
-// Resize handler
-const handleResize = () => {
-  updateMaxScroll();
-};
-
-window.addEventListener("resize", handleResize);
-onUnmounted(() => {
-  window.removeEventListener("resize", handleResize);
+// Lifecycle hooks
+onMounted(() => {
+  fetchRecommendedLessons();
 });
+
+watch(() => props.course, () => {
+  fetchRecommendedLessons();
+}, { deep: true });
 </script>
