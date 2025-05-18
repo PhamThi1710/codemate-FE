@@ -78,9 +78,9 @@ export default defineConfig({
     format: 'es'
   },
   server: {
-    headers: {
-      'Content-Type': 'application/javascript',
-    },
+    // headers: {
+    //   'Content-Type': 'application/javascript',
+    // },
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
